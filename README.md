@@ -40,7 +40,7 @@ Three transition matrices generated with different distributions:
 ## Project Structure
 ```
 .
-├── README.md                          # This file
+
 ├── requirements.txt                   # Python dependencies
 ├── data_generation.py                 # Generate synthetic sequences
 ├── distance_metrics.py                # Distance calculations
