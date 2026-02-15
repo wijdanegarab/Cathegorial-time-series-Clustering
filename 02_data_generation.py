@@ -2,31 +2,31 @@ import numpy as np
 import pandas as pd
 
 np.random.seed(42)
+STATES = ["sain_non_vaccine", "retabli", "contamine", "mort", "sain_vaccine", "infecte"]
 
-states = ["sain_non_vaccine", "retabli", "contamine", "mort", "sain_vaccine", "infecte"]
-n_states = len(states)
-
-M1 = np.random.rand(n_states, n_states)
-M1 = M1 / M1.sum(axis=1, keepdims=True)  
-
-def generate_sequences(transition_matrix, n_sequences=150, seq_length=10):
-   
-    n_states = transition_matrix.shape[0]
-    sequences = np.zeros((n_sequences, seq_length), dtype=int)
+def generate_matrix(dist_type, n_states):
+    if dist_type == 'uniform':
+        M = np.random.uniform(0, 1, (n_states, n_states))
+    elif dist_type == 'gaussian':
+        M = np.abs(np.random.standard_normal((n_states, n_states)))
+    else:
+        M = np.random.beta(2, 5, (n_states, n_states))
     
-    for i in range(n_sequences):
-        current_state = np.random.randint(0, n_states)
-        sequences[i, 0] = current_state
-        for t in range(1, seq_length):
-            probs = transition_matrix[current_state]
-            next_state = np.random.choice(n_states, p=probs)
-            sequences[i, t] = next_state
-            current_state = next_state
+    return M / M.sum(axis=1, keepdims=True)
+
+def generate_sequences(matrix, n_seq=150, seq_len=10):
+    n_states = matrix.shape[0]
+    sequences = np.zeros((n_seq, seq_len), dtype=int)
+    sequences[:, 0] = np.random.randint(0, n_states, n_seq)
+    
+    for t in range(1, seq_len):
+        for i in range(n_seq):
+            sequences[i, t] = np.random.choice(n_states, p=matrix[sequences[i, t-1]])
     
     return sequences
 
-sequences_m1 = generate_sequences(M1, n_sequences=150, seq_length=10)
-sequences_m1_names = [[states[idx] for idx in seq] for seq in sequences_m1]
-
-df_sequences = pd.DataFrame(sequences_m1, columns=[f"Day_{i}" for i in range(10)])
-df_sequences.to_csv("sequences_m1.csv", index=False)
+for name, dist in [('m1', 'uniform'), ('m2', 'gaussian'), ('m3', 'beta')]:
+    M = generate_matrix(dist, len(STATES))
+    seq = generate_sequences(M)
+    df = pd.DataFrame(seq, columns=[f"Day_{i}" for i in range(10)])
+    df.to_csv(f"sequences_{name}.csv", index=False)
